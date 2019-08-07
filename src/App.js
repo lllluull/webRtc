@@ -7,6 +7,7 @@ import './App.css';
 
 function App() {
   const [url, setUrl] = useState('')
+  const [videourl, setVideourl] = useState('')
   const [filters, setfilters] = useState('')
   const buffer = []
   const aa = async() => {
@@ -19,7 +20,6 @@ function App() {
     let mediaRecorder
     // 判断浏览器是否支持录制
     if(!MediaRecorder.isTypeSupported(options.mimeType)){
-      console.log("pop")
       console.error(`${options.mimeType} is not supported!`);
       return;
     
@@ -31,10 +31,8 @@ function App() {
       console.error('Failed to create MediaRecorder:', e);
       return;
     }
-    console.log("popp")
     mediaRecorder.ondataavailable = e => {
       if(e && e.data && e.data.size > 0){
-        console.log(e.data)
         buffer.push(e.data);
       }
     }
@@ -49,6 +47,7 @@ function App() {
     var blob = new Blob(buffer, {type: 'video/webm'});
     const recvideo = document.querySelector('#Rtc2')
     recvideo.src = window.URL.createObjectURL(blob);
+    setVideourl(window.URL.createObjectURL(blob))
     recvideo.srcObject = null;
     recvideo.controls = true;
     recvideo.play();
@@ -101,7 +100,8 @@ function App() {
         <canvas id="picture" className={filters}></canvas>
         <canvas id="realPicture"></canvas>
         <button onClick={takePicture}>拍照</button>
-        <a download="photo" href={url}>下载</a>
+        <a download="photo" href={url}>下载照片</a>
+        <a download="aaa.webm" href={videourl}>下载录像</a>
         <select id="filter" onChange={changeCss}>
           <option value="none">None</option>
           <option value="blur">blur</option>
