@@ -7,22 +7,64 @@ import './App.css';
 
 function App() {
   const [url, setUrl] = useState('')
+  const [filters, setfilters] = useState('')
+  const buffer = []
   const aa = async() => {
     let streams = await navigator.mediaDevices.getDisplayMedia({video: true})
     document.querySelector('#Rtc').srcObject = streams
     document.querySelector('#Rtc').play()
-    // setInterval(() =>takePicture(), 100 )
-
+    const options =  {
+      mimeType: 'video/webm;codecs=vp8'
+    }
+    let mediaRecorder
+    // 判断浏览器是否支持录制
+    if(!MediaRecorder.isTypeSupported(options.mimeType)){
+      console.log("pop")
+      console.error(`${options.mimeType} is not supported!`);
+      return;
+    
+    }
+    try{
+      // 创建录制对象
+      mediaRecorder = new MediaRecorder(streams, options);
+    }catch(e){
+      console.error('Failed to create MediaRecorder:', e);
+      return;
+    }
+    console.log("popp")
+    mediaRecorder.ondataavailable = e => {
+      if(e && e.data && e.data.size > 0){
+        console.log(e.data)
+        buffer.push(e.data);
+      }
+    }
+    mediaRecorder.start(10)
   }
   const bb = () => {
     let stream = document.querySelector('#Rtc').captureStream();
     document.querySelector('#Rtc1').srcObject = stream;
 
   }
-  const  cc = () => {
-    let stream = document.querySelector('#Rtc1').captureStream();
-    document.querySelector('#Rtc2').srcObject = stream;
+  const cc = () => {
+    var blob = new Blob(buffer, {type: 'video/webm'});
+    const recvideo = document.querySelector('#Rtc2')
+    recvideo.src = window.URL.createObjectURL(blob);
+    recvideo.srcObject = null;
+    recvideo.controls = true;
+    recvideo.play();
+  }
 
+  const changeCss = e => {
+    setfilters(e.target.value)
+    setTimeout(() => {
+      const realPicture = document.querySelector('canvas#realPicture')
+      const picture = document.querySelector('canvas#picture');
+      realPicture.width = 640;
+      realPicture.height = 480;
+      realPicture.getContext('2d').drawImage(picture, 0, 0, realPicture.width, realPicture.height);
+      setUrl(realPicture.toDataURL("image/jpeg", 1.0))
+    },1000)
+    
   }
   const takePicture = () => {
     const videoplay = document.querySelector('#Rtc')
@@ -30,7 +72,6 @@ function App() {
     picture.width = 640;
     picture.height = 480;
     picture.getContext('2d').drawImage(videoplay, 0, 0, picture.width, picture.height);
-    setUrl(picture.toDataURL("image/jpeg"))
   }
   return (
     <div className="App">
@@ -57,9 +98,17 @@ function App() {
         >
           第三个显示
         </div>
-        <canvas id="picture"></canvas>
+        <canvas id="picture" className={filters}></canvas>
+        <canvas id="realPicture"></canvas>
         <button onClick={takePicture}>拍照</button>
         <a download="photo" href={url}>下载</a>
+        <select id="filter" onChange={changeCss}>
+          <option value="none">None</option>
+          <option value="blur">blur</option>
+          <option value="grayscale">Grayscale</option>
+          <option value="invert">Invert</option>
+          <option value="sepia">sepia</option>
+        </select>
          <div style={{display: "flex"}}>
          <video  playsInline id="Rtc" width="400px" height="200px" ></video>
           <video autoPlay playsInline id="Rtc1" width="400px" height="200px" ></video>
